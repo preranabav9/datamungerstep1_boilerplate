@@ -34,8 +34,8 @@ public class DataMunger {
 	 */
 
 	public String[] getSplitStrings(String queryString) {
-
-		return null;
+		queryString = queryString.toLowerCase();
+		return queryString.split(" ");
 	}
 
 	/*
@@ -47,8 +47,12 @@ public class DataMunger {
 	 */
 
 	public String getFileName(String queryString) {
-
-		return null;
+		queryString = queryString.toLowerCase();
+		String file = queryString;
+		int IndexOffrom = file.indexOf("from");
+		int IndexOfcsv = file.indexOf("csv");
+		String filename = file.substring(IndexOffrom + 5, IndexOfcsv + 3);
+		return filename;
 	}
 
 	/*
@@ -62,9 +66,17 @@ public class DataMunger {
 	 */
 	
 	public String getBaseQuery(String queryString) {
-
-		return null;
-	}
+            queryString = queryString.toLowerCase();
+	        int index = 0;
+	        if (queryString.contains("where")) {
+	            index = queryString.indexOf(" where ");
+	        } else if (queryString.contains("group by")) {
+	            index = queryString.indexOf(" group");
+	        }
+	        queryString = queryString.substring(0, index);
+	        return queryString;
+	    }
+	
 
 	/*
 	 * This method will extract the fields to be selected from the query string. The
@@ -77,25 +89,47 @@ public class DataMunger {
 	 * name can contain '*'
 	 * 
 	 */
-	
+
 	public String[] getFields(String queryString) {
+		queryString = queryString.toLowerCase();
 
-		return null;
+		int index = queryString.length();
+		if (queryString.contains("from")) {
+			index = queryString.indexOf("from");
+		}
+		queryString = queryString.substring(6, index);
+		String[] str = queryString.trim().split(",");
+		return str;
 	}
-
 	/*
 	 * This method is used to extract the conditions part from the query string. The
 	 * conditions part contains starting from where keyword till the next keyword,
 	 * which is either group by or order by clause. In case of absence of both group
 	 * by and order by clause, it will contain till the end of the query string.
-	 * Note:  1. The field name or value in the condition can contain keywords
-	 * as a substring. For eg: from_city,job_order_no,group_no etc. 2. The query
-	 * might not contain where clause at all.
+	 * Note: 1. The field name or value in the condition can contain keywords as a
+	 * substring. For eg: from_city,job_order_no,group_no etc. 2. The query might
+	 * not contain where clause at all.
 	 */
 	
 	public String getConditionsPartQuery(String queryString) {
 
-		return null;
+		String ConditionPart = null;
+		queryString = queryString.toLowerCase();
+		if (queryString.contains("where")) {
+			String[] whereQuery = queryString.split("where ");
+			if (whereQuery[1].contains("order by")) {
+				int getOrderBy = whereQuery[1].indexOf("order by");
+				whereQuery[1] = whereQuery[1].substring(0, getOrderBy - 1);
+				ConditionPart = whereQuery[1];
+			} else if (whereQuery[1].contains("group by")) {
+				int getGroupBy = whereQuery[1].indexOf("group by");
+				whereQuery[1] = whereQuery[1].substring(0, getGroupBy - 1);
+				ConditionPart = whereQuery[1];
+			} else {
+				ConditionPart = whereQuery[1];
+			}
+		}
+		return ConditionPart;
 	}
 
 	/*
@@ -115,7 +149,30 @@ public class DataMunger {
 
 	public String[] getConditions(String queryString) {
 
-		return null;
+		queryString = queryString.toLowerCase();
+		String[] whereQuery;
+
+		String tempString;
+		String[] conditionQuery;
+		String[] getCondition = null;
+		if (queryString.contains("where")) {
+			whereQuery = queryString.trim().split("where ");
+			if (whereQuery[1].contains("group by")) {
+				conditionQuery = whereQuery[1].trim().split("group by");
+				tempString = conditionQuery[0];
+			} else if (whereQuery[1].contains("order by")) {
+				conditionQuery = whereQuery[1].trim().split("order by");
+				tempString = conditionQuery[0];
+			} else {
+				tempString = whereQuery[1];
+			}
+			getCondition = tempString.toLowerCase().trim().split(" and | or ");
+			for (String s : getCondition) {
+				System.out.println(s.trim());
+			}
+
+		}
+		return getCondition;
 	}
 
 	/*
@@ -131,7 +188,19 @@ public class DataMunger {
 
 	public String[] getLogicalOperators(String queryString) {
 
-		return null;
+		String array [] = null;
+		String result = "";
+		if (queryString.toLowerCase().indexOf(" and ") > -1) {
+			result = result.concat("and=");
+		}
+		if (queryString.toLowerCase().indexOf(" or ") > -1) {
+			result = result.concat("or");
+		}
+		if (!result.isEmpty()) {
+			
+			return result.split("=");
+		}
+		return array;
 	}
 
 	/*
@@ -143,8 +212,14 @@ public class DataMunger {
 	 */
 
 	public String[] getOrderByFields(String queryString) {
-
-		return null;
+		queryString = queryString.toLowerCase();
+		String[] getOrderBy = null;
+		if (queryString.contains("order by")) {
+			int orderby = queryString.indexOf("order by ");
+			String order = queryString.substring(orderby + 9);
+			getOrderBy = order.split(" ");
+		}
+		return getOrderBy;
 	}
 
 	/*
@@ -158,7 +233,14 @@ public class DataMunger {
 
 	public String[] getGroupByFields(String queryString) {
 
-		return null;
+		String[] getGroupBy = null;
+		queryString = queryString.toLowerCase();
+		if (queryString.contains("group by")) {
+			int groupby = queryString.indexOf("group by");
+			String group = queryString.substring(groupby + 9);
+			getGroupBy = group.split(" ");
+		}
+		return getGroupBy;
 	}
 
 	/*
@@ -173,7 +255,26 @@ public class DataMunger {
 
 	public String[] getAggregateFunctions(String queryString) {
 
-		return null;
+		queryString = queryString.toLowerCase();
+		boolean state = false;
+		String getAggregate = "";
+		String[] query = queryString.split(" ");
+		String[] agg = query[1].split(",");
+		for (int i = 0; i < agg.length; i++) {
+			if ((agg[i].startsWith("max(") && agg[i].endsWith(")"))
+					|| (agg[i].startsWith("min(") && agg[i].endsWith(")"))
+					|| (agg[i].startsWith("count(") && agg[i].endsWith(")"))
+					|| (agg[i].startsWith("avg(") && agg[i].endsWith(")"))
+					|| (agg[i].startsWith("sum") && agg[i].endsWith(")"))) {
+				getAggregate += agg[i] + " ";
+				state = true;
+			}
+		}
+		if (state == true)
+			return getAggregate.trim().split(" ");
+		else
+			return null;
+
 	}
 
 }
